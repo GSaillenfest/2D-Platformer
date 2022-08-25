@@ -4,19 +4,20 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField]
-    Animator animator;
-    [SerializeField]
-    Rigidbody2D playerRb;
-    [SerializeField]
-    float jumpForce = 5f;
-    [SerializeField]
-    float speed = 5f;
+    [SerializeField] Animator animator;
+    [SerializeField] Rigidbody2D playerRb;
+    [SerializeField] float jumpForce = 5f;
+    [SerializeField] float speed = 5f;
+    [SerializeField] float speedMultiplier = 3f;
+
+    [SerializeField] jumpManager jumpManager;
 
     float horizontalMovement;
     float multiplier = 1f;
     bool isFacingRight = true;
     bool isJumping = false;
+    bool canJump = true;
+    bool jump = false;
 
     // Start is called before the first frame update
     void Start()
@@ -27,8 +28,8 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         horizontalMovement = Input.GetAxis("Horizontal");
-        Flip();
-        isJumping = animator.GetBool("isJumping");
+        isJumping = jumpManager.isJumping;
+        canJump = jumpManager.canJump;
 
         if (Input.GetKeyDown(KeyCode.LeftControl)) animator.SetTrigger("dodge");
 
@@ -36,11 +37,12 @@ public class PlayerController : MonoBehaviour
         {
             if (horizontalMovement < 0) isFacingRight = false;
             else if (horizontalMovement > 0) isFacingRight = true;
+            Flip();
 
 
-            if (Input.GetKeyDown(KeyCode.Space))
+            if (Input.GetKeyDown(KeyCode.Space) && canJump)
             {
-                playerRb.AddForce(Vector2.up * jumpForce);
+                jump = true;
                 animator.SetTrigger("jump");
                 animator.SetBool("isJumping", true);
             }
@@ -55,8 +57,8 @@ public class PlayerController : MonoBehaviour
             animator.SetBool("isRunning", true);
             if (Input.GetKey(KeyCode.LeftShift))
             {
-                playerRb.AddForce(Vector2.right * horizontalMovement * speed * 2f);
-                multiplier = 2f;
+                playerRb.AddForce(Vector2.right * horizontalMovement * speed * speedMultiplier);
+                multiplier = speedMultiplier;
             }
             else
             {
@@ -66,6 +68,12 @@ public class PlayerController : MonoBehaviour
             animator.SetFloat("multiplier", multiplier);
         }
         else animator.SetBool("isRunning", false);
+
+        if (jump)
+        {
+            Jump();
+            jump = false;
+        }
     }
 
     void Flip()
@@ -76,4 +84,11 @@ public class PlayerController : MonoBehaviour
         }
         else GetComponentInChildren<Transform>().localScale = new Vector3(1f, 1f, 1f);
     }
+
+    void Jump()
+    {
+        playerRb.AddForce(Vector2.up * jumpForce);
+    }
+
+
 }
